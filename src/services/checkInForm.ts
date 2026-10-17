@@ -19,6 +19,11 @@ export type CheckInForm = {
   /** Datum passet flyttats till; bara satt när strengthStatus === "moved". */
   strengthMovedTo: string | null;
   mobilityMinutes: string;
+  waistCm: string;
+  hipsCm: string;
+  chestCm: string;
+  thighCm: string;
+  armCm: string;
   note: string;
 };
 
@@ -34,6 +39,11 @@ export const EMPTY_FORM: CheckInForm = {
   strengthStatus: null,
   strengthMovedTo: null,
   mobilityMinutes: "",
+  waistCm: "",
+  hipsCm: "",
+  chestCm: "",
+  thighCm: "",
+  armCm: "",
   note: "",
 };
 
@@ -55,6 +65,11 @@ export function logToForm(log: DailyLog | null): CheckInForm {
     strengthStatus: log.strengthStatus ?? null,
     strengthMovedTo: log.strengthMovedTo ?? null,
     mobilityMinutes: numToText(log.mobilityMinutes),
+    waistCm: numToText(log.waistCm),
+    hipsCm: numToText(log.hipsCm),
+    chestCm: numToText(log.chestCm),
+    thighCm: numToText(log.thighCm),
+    armCm: numToText(log.armCm),
     note: log.note ?? "",
   };
 }
@@ -71,7 +86,20 @@ export function parseNumber(text: string, decimal: boolean): number | null | "in
 }
 
 type FieldSpec = {
-  key: "weightKg" | "calories" | "proteinG" | "fiberG" | "walkMinutes" | "steps" | "sleepHours" | "mobilityMinutes";
+  key:
+    | "weightKg"
+    | "calories"
+    | "proteinG"
+    | "fiberG"
+    | "walkMinutes"
+    | "steps"
+    | "sleepHours"
+    | "mobilityMinutes"
+    | "waistCm"
+    | "hipsCm"
+    | "chestCm"
+    | "thighCm"
+    | "armCm";
   label: string;
   decimal: boolean;
   min: number;
@@ -87,6 +115,11 @@ const FIELDS: FieldSpec[] = [
   { key: "steps", label: "Steg", decimal: false, min: 0, max: 200000 },
   { key: "sleepHours", label: "Sömn", decimal: true, min: 0, max: 24 },
   { key: "mobilityMinutes", label: "Mobility", decimal: false, min: 0, max: 1440 },
+  { key: "waistCm", label: "Midja", decimal: true, min: 10, max: 300 },
+  { key: "hipsCm", label: "Höft", decimal: true, min: 10, max: 300 },
+  { key: "chestCm", label: "Bröst", decimal: true, min: 10, max: 300 },
+  { key: "thighCm", label: "Lår", decimal: true, min: 10, max: 300 },
+  { key: "armCm", label: "Överarm", decimal: true, min: 10, max: 300 },
 ];
 
 export type FormResult = { ok: true; input: DailyLogInput } | { ok: false; error: string };
@@ -138,6 +171,11 @@ export function formToInput(date: string, form: CheckInForm): FormResult {
       strengthStatus: form.strengthStatus,
       strengthMovedTo: movedTo,
       mobilityMinutes: values.mobilityMinutes,
+      waistCm: values.waistCm,
+      hipsCm: values.hipsCm,
+      chestCm: values.chestCm,
+      thighCm: values.thighCm,
+      armCm: values.armCm,
       note: note === "" ? null : note,
     },
   };

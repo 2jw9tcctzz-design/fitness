@@ -24,6 +24,12 @@ export type DailyLog = {
   /** Datum (YYYY-MM-DD) passet flyttats till. Satt bara när strengthStatus === "moved". */
   strengthMovedTo?: string | null;
   mobilityMinutes?: number | null;
+  /** Valfria kroppsmått i cm. Loggas när man mäter, inte varje dag. */
+  waistCm?: number | null;
+  hipsCm?: number | null;
+  chestCm?: number | null;
+  thighCm?: number | null;
+  armCm?: number | null;
   note?: string | null;
   createdAt: string;
   updatedAt: string;

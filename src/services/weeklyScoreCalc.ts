@@ -39,6 +39,11 @@ function hasAnyData(log: DailyLog): boolean {
     log.energy != null ||
     log.strengthStatus != null ||
     log.mobilityMinutes != null ||
+    log.waistCm != null ||
+    log.hipsCm != null ||
+    log.chestCm != null ||
+    log.thighCm != null ||
+    log.armCm != null ||
     (log.note != null && log.note.trim() !== "")
   );
 }

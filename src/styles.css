@@ -60,6 +60,21 @@ button {
   flex-direction: column;
   gap: 4px;
 }
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.back-button {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 12px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font-size: 17px;
+  font-weight: 600;
+}
 .app-title {
   margin: 0;
   font-size: 34px;
@@ -166,6 +181,14 @@ button {
   font-size: 20px;
   font-weight: 700;
 }
+.card-title:has(+ .card-subtitle) {
+  margin-bottom: 4px;
+}
+.card-subtitle {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: var(--muted);
+}
 .notice {
   margin: 0;
   font-size: 15px;
@@ -217,6 +240,43 @@ button {
 }
 .input-label {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.input-hint {
+  font-size: 14px;
+  color: var(--muted);
+}
+.date-field {
+  width: auto;
+  min-width: 150px;
+  text-align: center;
+}
+.note-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+}
+.measurements {
+  margin-top: 4px;
+}
+.disclosure {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 17px;
+  text-align: left;
+}
+.disclosure-hint {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--blue);
 }
 .input-wrap {
   display: flex;

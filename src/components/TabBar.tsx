@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import type { TabId } from "../hooks/useHashRoute";
+import type { RouteId, TabId } from "../hooks/useHashRoute";
 
-type Props = { active: TabId; onChange: (tab: TabId) => void };
+type Props = { active: RouteId; onChange: (tab: TabId) => void };
 
 const icon = (path: ReactNode) => (
   <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

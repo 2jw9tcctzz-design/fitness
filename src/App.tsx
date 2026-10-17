@@ -3,13 +3,15 @@ import { TabBar } from "./components/TabBar";
 import { initDatabase, requestPersistentStorage } from "./db/database";
 import { useHashRoute } from "./hooks/useHashRoute";
 import { FoodScreen, ProgressScreen, TrainingScreen } from "./screens/PlaceholderScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
 import { TodayScreen } from "./screens/TodayScreen";
+import { SettingsProvider } from "./settings/SettingsContext";
 
 type DbState = "loading" | "ready" | "error";
 
 export default function App() {
   const [dbState, setDbState] = useState<DbState>("loading");
-  const [tab, setTab] = useHashRoute();
+  const [route, setRoute] = useHashRoute();
 
   const init = useCallback(async () => {
     setDbState("loading");
@@ -44,14 +46,19 @@ export default function App() {
   }
 
   return (
-    <>
+    <SettingsProvider>
       <main className="main">
-        {tab === "idag" ? <TodayScreen /> : null}
-        {tab === "mat" ? <FoodScreen /> : null}
-        {tab === "traning" ? <TrainingScreen /> : null}
-        {tab === "progress" ? <ProgressScreen /> : null}
+        {/* Idag hålls monterad (bara dold) så att valt datum och osparad inmatning finns kvar när man
+            tittar i Inställningar eller byter flik. */}
+        <div hidden={route !== "idag"}>
+          <TodayScreen onOpenSettings={() => setRoute("installningar")} />
+        </div>
+        {route === "installningar" ? <SettingsScreen onBack={() => setRoute("idag")} /> : null}
+        {route === "mat" ? <FoodScreen /> : null}
+        {route === "traning" ? <TrainingScreen /> : null}
+        {route === "progress" ? <ProgressScreen /> : null}
       </main>
-      <TabBar active={tab} onChange={setTab} />
-    </>
+      <TabBar active={route} onChange={setRoute} />
+    </SettingsProvider>
   );
 }

@@ -16,3 +16,23 @@ export type ProgramSettings = {
 export type ActivityType = "strength" | "mobility_walk";
 
 export type ProgramStatus = "upcoming" | "active" | "finished";
+
+export type BodyMeasurements = {
+  waistCm: number | null;
+  hipsCm: number | null;
+  chestCm: number | null;
+  thighCm: number | null;
+  armCm: number | null;
+};
+
+/** Startvärden som dagens värden jämförs mot. null = inte angivet. */
+export type BodyBaseline = {
+  startWeightKg: number | null;
+  startMeasurements: BodyMeasurements;
+};
+
+/** Allt som kan ändras i Inställningar. */
+export type AppSettings = {
+  program: ProgramSettings;
+  baseline: BodyBaseline;
+};

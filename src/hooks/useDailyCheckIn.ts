@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getProgramSettings } from "../config/programDefaults";
 import {
   getDailyLog,
   getLogMovedTo,
@@ -13,6 +12,7 @@ import { getActivityType } from "../services/programService";
 import { getMoveTargetCandidates } from "../services/strengthPlanService";
 import { getWeekSummary, type WeekSummary } from "../services/weeklyScoreService";
 import type { StrengthStatus } from "../types/dailyLog";
+import type { AppSettings } from "../types/program";
 import { addDays, todayString } from "../utils/dates";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
@@ -28,8 +28,10 @@ function logError(context: string, error: unknown) {
  * All logik bakom Idag-skärmen: valt datum, formulär, laddning, sparande, veckosammanfattning
  * och styrkepassets flytt. Skärmen själv håller bara layout.
  */
-export function useDailyCheckIn() {
-  const settings = getProgramSettings();
+export function useDailyCheckIn(appSettings: AppSettings) {
+  const settings = appSettings.program;
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
   const [date, setDate] = useState<string>(() => todayString());
   const [form, setForm] = useState<CheckInForm>(EMPTY_FORM);
   const [week, setWeek] = useState<WeekSummary | null>(null);
@@ -45,7 +47,7 @@ export function useDailyCheckIn() {
   const refreshAux = useCallback(async (forDate: string) => {
     try {
       const [summary, incoming, taken] = await Promise.all([
-        getWeekSummary(forDate, settings),
+        getWeekSummary(forDate, settingsRef.current),
         getLogMovedTo(forDate),
         getMoveTargetsTaken(addDays(forDate, 1), addDays(forDate, MOVE_WINDOW_DAYS)),
       ]);
@@ -58,9 +60,18 @@ export function useDailyCheckIn() {
       setMovedInFrom(null);
       setTakenTargets(new Set());
     }
-    // settings är en konstant från config
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Ändras inställningarna (mål, styrkedagar) räknas veckan om utan att dagens inmatning laddas om.
+  const firstSettingsRun = useRef(true);
+  useEffect(() => {
+    if (firstSettingsRun.current) {
+      firstSettingsRun.current = false;
+      return;
+    }
+    void refreshAux(date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings]);
 
   // Ladda loggen för valt datum. `cancelled` hindrar att ett långsamt svar skriver över en nyare dag.
   useEffect(() => {
@@ -164,6 +175,7 @@ export function useDailyCheckIn() {
 
   return {
     settings,
+    baseline: appSettings.baseline,
     date,
     setDate,
     isToday: date === todayString(),

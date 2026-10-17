@@ -9,6 +9,7 @@ export type Migration = {
 
 export const DAILY_LOGS_STORE = "daily_logs";
 export const MOVED_TO_INDEX = "by_strength_moved_to";
+export const SETTINGS_STORE = "settings";
 
 export const migrations: Migration[] = [
   {
@@ -18,6 +19,14 @@ export const migrations: Migration[] = [
       const store = db.createObjectStore(DAILY_LOGS_STORE, { keyPath: "date" });
       // Hittar passet som flyttats TILL ett visst datum. Rader utan värde (null) hamnar inte i indexet.
       store.createIndex(MOVED_TO_INDEX, "strengthMovedTo", { unique: false });
+    },
+  },
+  {
+    version: 2,
+    // Inställningar (mål, programstart, startvikt/startmått). En enda post med nyckeln "app".
+    // Dagloggen berörs inte; befintlig data finns kvar vid uppgradering.
+    up: (db) => {
+      db.createObjectStore(SETTINGS_STORE, { keyPath: "key" });
     },
   },
 ];

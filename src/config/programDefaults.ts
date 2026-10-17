@@ -1,4 +1,5 @@
-import type { ProgramSettings } from "../types/program";
+import type { AppSettings, BodyBaseline, ProgramSettings } from "../types/program";
+import { EMPTY_MEASUREMENTS } from "./measurements";
 
 /**
  * Enda stället där programmets startdatum och mål definieras.
@@ -21,10 +22,17 @@ export const DEFAULT_PROGRAM_SETTINGS: ProgramSettings = {
   mobilityTargetMin: 10,
 };
 
-/**
- * Sprint 1 använder bara defaults. En settings-modell (t.ex. tabell i SQLite)
- * kan senare ersätta denna funktion utan att anropare ändras.
- */
+/** Standardvärden. De faktiska inställningarna läses från databasen (settingsRepository). */
 export function getProgramSettings(): ProgramSettings {
   return DEFAULT_PROGRAM_SETTINGS;
 }
+
+export const DEFAULT_BASELINE: BodyBaseline = {
+  startWeightKg: null,
+  startMeasurements: { ...EMPTY_MEASUREMENTS },
+};
+
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  program: DEFAULT_PROGRAM_SETTINGS,
+  baseline: DEFAULT_BASELINE,
+};

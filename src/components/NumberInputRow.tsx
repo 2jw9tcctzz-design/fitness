@@ -8,14 +8,17 @@ type Props = {
   /** Decimaltangentbord för vikt och sömn; heltalstangentbord för övriga. */
   decimal?: boolean;
   placeholder?: string;
+  /** Liten hjälptext under etiketten, t.ex. "Mål 135 g". */
+  hint?: string;
 };
 
-export function NumberInputRow({ label, unit, value, onChange, decimal = false, placeholder }: Props) {
+export function NumberInputRow({ label, unit, value, onChange, decimal = false, placeholder, hint }: Props) {
   const id = useId();
   return (
     <div className="input-row">
       <label className="input-label" htmlFor={id}>
-        {label}
+        <span>{label}</span>
+        {hint ? <span className="input-hint">{hint}</span> : null}
       </label>
       <div className="input-wrap">
         <input

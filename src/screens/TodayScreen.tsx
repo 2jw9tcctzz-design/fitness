@@ -2,17 +2,23 @@ import { ActivityInput } from "../components/ActivityInput";
 import { AppHeader } from "../components/AppHeader";
 import { EnergySelector } from "../components/EnergySelector";
 import { FocusCard } from "../components/FocusCard";
+import { MeasurementsInput } from "../components/MeasurementsInput";
 import { NoteField } from "../components/NoteField";
 import { NumberInputRow } from "../components/NumberInputRow";
 import { SaveButton } from "../components/SaveButton";
 import { SectionCard } from "../components/SectionCard";
 import { SummaryCard } from "../components/SummaryCard";
 import { useDailyCheckIn } from "../hooks/useDailyCheckIn";
+import { useSettings } from "../settings/SettingsContext";
 import { formatDateLong } from "../utils/dates";
+import { formatNumber } from "../utils/format";
 
-export function TodayScreen() {
-  const t = useDailyCheckIn();
-  const { form, updateForm, week, settings } = t;
+type Props = { onOpenSettings: () => void };
+
+export function TodayScreen({ onOpenSettings }: Props) {
+  const { settings: appSettings } = useSettings();
+  const t = useDailyCheckIn(appSettings);
+  const { form, updateForm, week, settings, baseline } = t;
 
   const weekScore = week?.score != null ? String(week.score) : "—";
   const strengthText = week ? `${week.strengthCount}/${week.strengthTarget}` : "—";
@@ -30,6 +36,7 @@ export function TodayScreen() {
         onNextDay={t.goToNextDay}
         onGoToToday={t.goToToday}
         onPickDate={t.setDate}
+        onOpenSettings={onOpenSettings}
       />
 
       <div className="summary-row">
@@ -44,26 +51,61 @@ export function TodayScreen() {
         <p className="notice">Det gick inte att läsa den sparade dagen. Du kan fortfarande fylla i och spara.</p>
       ) : null}
 
-      <SectionCard title="Dagens check-in">
-        <NumberInputRow label="Vikt" unit="kg" decimal value={form.weightKg} onChange={(v) => updateForm("weightKg", v)} />
+      <SectionCard title="Morgonens check-in">
+        <NumberInputRow
+          label="Vikt"
+          unit="kg"
+          decimal
+          hint={baseline.startWeightKg != null ? `Start ${formatNumber(baseline.startWeightKg)} kg` : undefined}
+          value={form.weightKg}
+          onChange={(v) => updateForm("weightKg", v)}
+        />
+        <NumberInputRow
+          label="Sömn"
+          unit="h"
+          decimal
+          hint={`Mål ${formatNumber(settings.sleepTargetHours)} h`}
+          value={form.sleepHours}
+          onChange={(v) => updateForm("sleepHours", v)}
+        />
+        <MeasurementsInput
+          values={{
+            waistCm: form.waistCm,
+            hipsCm: form.hipsCm,
+            chestCm: form.chestCm,
+            thighCm: form.thighCm,
+            armCm: form.armCm,
+          }}
+          baseline={baseline.startMeasurements}
+          onChange={(key, text) => updateForm(key, text)}
+        />
+      </SectionCard>
+
+      <SectionCard title="Under dagen" subtitle="Det du ätit. Fylls i här tills Mat är klar (Sprint 2).">
         <NumberInputRow
           label="Kalorier"
           unit="kcal"
+          hint={`Mål ${formatNumber(settings.calorieTarget)} kcal`}
           value={form.calories}
-          placeholder={String(settings.calorieTarget)}
           onChange={(v) => updateForm("calories", v)}
         />
-        <NumberInputRow label="Protein" unit="g" value={form.proteinG} onChange={(v) => updateForm("proteinG", v)} />
-        <NumberInputRow label="Fiber" unit="g" value={form.fiberG} onChange={(v) => updateForm("fiberG", v)} />
-        <NumberInputRow label="Powerwalk" unit="min" value={form.walkMinutes} onChange={(v) => updateForm("walkMinutes", v)} />
         <NumberInputRow
-          label="Steg"
-          value={form.steps}
-          placeholder={String(settings.stepTarget)}
-          onChange={(v) => updateForm("steps", v)}
+          label="Protein"
+          unit="g"
+          hint={`Mål ${formatNumber(settings.proteinTargetG)} g`}
+          value={form.proteinG}
+          onChange={(v) => updateForm("proteinG", v)}
         />
-        <NumberInputRow label="Sömn" unit="h" decimal value={form.sleepHours} onChange={(v) => updateForm("sleepHours", v)} />
-        <EnergySelector value={form.energy} onChange={(v) => updateForm("energy", v)} />
+        <NumberInputRow
+          label="Fiber"
+          unit="g"
+          hint={`Mål ${formatNumber(settings.fiberTargetG)}+ g`}
+          value={form.fiberG}
+          onChange={(v) => updateForm("fiberG", v)}
+        />
+      </SectionCard>
+
+      <SectionCard title="Genomförd träning" subtitle="Fylls i här tills Träning är klar (Sprint 3).">
         <ActivityInput
           activityType={t.activityType}
           strengthStatus={form.strengthStatus}
@@ -75,10 +117,27 @@ export function TodayScreen() {
           mobilityMinutes={form.mobilityMinutes}
           onMobilityChange={(v) => updateForm("mobilityMinutes", v)}
         />
+        <NumberInputRow
+          label="Powerwalk"
+          unit="min"
+          hint={`Mål ${formatNumber(settings.walkTargetMin)} min`}
+          value={form.walkMinutes}
+          onChange={(v) => updateForm("walkMinutes", v)}
+        />
       </SectionCard>
 
-      <SectionCard title="Anteckning">
-        <NoteField value={form.note} onChange={(v) => updateForm("note", v)} />
+      <SectionCard title="Kvällens check-out">
+        <NumberInputRow
+          label="Steg"
+          hint={`Mål ${formatNumber(settings.stepTarget)}`}
+          value={form.steps}
+          onChange={(v) => updateForm("steps", v)}
+        />
+        <EnergySelector value={form.energy} onChange={(v) => updateForm("energy", v)} />
+        <div className="note-block">
+          <div className="input-label">Anteckning</div>
+          <NoteField value={form.note} onChange={(v) => updateForm("note", v)} />
+        </div>
       </SectionCard>
 
       <SaveButton state={t.saveState} onPress={t.save} errorMessage={t.saveError} />
