@@ -1,6 +1,7 @@
 import { MEASUREMENT_FIELDS } from "../config/measurements";
 import { DateInputRow } from "../components/DateInputRow";
 import { NumberInputRow } from "../components/NumberInputRow";
+import { BackupSection } from "../components/BackupSection";
 import { SectionCard } from "../components/SectionCard";
 import { useSettingsForm } from "../hooks/useSettingsForm";
 import { useSettings } from "../settings/SettingsContext";
@@ -34,6 +35,8 @@ export function SettingsScreen({ onBack }: Props) {
       <SectionCard title="Dagliga mål" subtitle="Visas som hjälptext i Idag och styr vad som räknas som uppnått.">
         <NumberInputRow label="Kalorier" unit="kcal" value={form.calorieTarget} onChange={(v) => update("calorieTarget", v)} />
         <NumberInputRow label="Protein" unit="g" value={form.proteinTargetG} onChange={(v) => update("proteinTargetG", v)} />
+        <NumberInputRow label="Kolhydrater" unit="g" value={form.carbsTargetG} onChange={(v) => update("carbsTargetG", v)} />
+        <NumberInputRow label="Fett" unit="g" value={form.fatTargetG} onChange={(v) => update("fatTargetG", v)} />
         <NumberInputRow label="Fiber" unit="g" value={form.fiberTargetG} onChange={(v) => update("fiberTargetG", v)} />
         <NumberInputRow label="Promenad" unit="min" value={form.walkTargetMin} onChange={(v) => update("walkTargetMin", v)} />
         <NumberInputRow label="Sömn" unit="h" decimal value={form.sleepTargetHours} onChange={(v) => update("sleepTargetHours", v)} />
@@ -104,6 +107,8 @@ export function SettingsScreen({ onBack }: Props) {
           ) : null}
         </div>
       </div>
+
+      <BackupSection />
     </div>
   );
 }

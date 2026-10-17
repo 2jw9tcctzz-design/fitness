@@ -13,6 +13,8 @@ import { getMoveTargetCandidates } from "../services/strengthPlanService";
 import { getWeekSummary, type WeekSummary } from "../services/weeklyScoreService";
 import type { StrengthStatus } from "../types/dailyLog";
 import type { AppSettings } from "../types/program";
+import { useAppState } from "../state/AppStateContext";
+import { useDayNutrition } from "./useDayNutrition";
 import { addDays, todayString } from "../utils/dates";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
@@ -32,7 +34,8 @@ export function useDailyCheckIn(appSettings: AppSettings) {
   const settings = appSettings.program;
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
-  const [date, setDate] = useState<string>(() => todayString());
+  const { date, setDate, mealRevision } = useAppState();
+  const dayNutrition = useDayNutrition(date);
   const [form, setForm] = useState<CheckInForm>(EMPTY_FORM);
   const [week, setWeek] = useState<WeekSummary | null>(null);
   const [movedInFrom, setMovedInFrom] = useState<string | null>(null);
@@ -72,6 +75,17 @@ export function useDailyCheckIn(appSettings: AppSettings) {
     void refreshAux(date);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings]);
+
+  // Ändras måltiderna (Äten i Mat) räknas veckan om.
+  const firstMealRun = useRef(true);
+  useEffect(() => {
+    if (firstMealRun.current) {
+      firstMealRun.current = false;
+      return;
+    }
+    void refreshAux(date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mealRevision]);
 
   // Ladda loggen för valt datum. `cancelled` hindrar att ett långsamt svar skriver över en nyare dag.
   useEffect(() => {
@@ -160,8 +174,15 @@ export function useDailyCheckIn(appSettings: AppSettings) {
     [date, settings, movedInFrom]
   );
   const focusItems = useMemo(
-    () => buildFocusItems(date, form, settings, movedInFrom),
-    [date, form, settings, movedInFrom]
+    () =>
+      buildFocusItems(
+        date,
+        form,
+        settings,
+        movedInFrom,
+        dayNutrition.source === "meals" ? dayNutrition.values : null
+      ),
+    [date, form, settings, movedInFrom, dayNutrition]
   );
   const moveCandidates = useMemo(() => {
     const list = getMoveTargetCandidates(date, settings, takenTargets, MOVE_WINDOW_DAYS);
@@ -178,6 +199,7 @@ export function useDailyCheckIn(appSettings: AppSettings) {
     baseline: appSettings.baseline,
     date,
     setDate,
+    dayNutrition,
     isToday: date === todayString(),
     header,
     activityType,
@@ -194,8 +216,8 @@ export function useDailyCheckIn(appSettings: AppSettings) {
     saveState,
     saveError,
     save,
-    goToPrevDay: () => setDate((d) => addDays(d, -1)),
-    goToNextDay: () => setDate((d) => addDays(d, 1)),
+    goToPrevDay: () => setDate(addDays(date, -1)),
+    goToNextDay: () => setDate(addDays(date, 1)),
     goToToday: () => setDate(todayString()),
   };
 }

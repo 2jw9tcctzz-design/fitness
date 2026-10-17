@@ -14,6 +14,8 @@ export const DEFAULT_PROGRAM_SETTINGS: ProgramSettings = {
   durationWeeks: 12,
   calorieTarget: 1800,
   proteinTargetG: 135,
+  carbsTargetG: 180,
+  fatTargetG: 60,
   fiberTargetG: 30,
   walkTargetMin: 30,
   sleepTargetHours: 8,

@@ -39,23 +39,25 @@ export function buildFocusItems(
   date: string,
   form: CheckInForm,
   settings: ProgramSettings,
-  movedInFrom: string | null = null
+  movedInFrom: string | null = null,
+  nutrition: { proteinG: number | null; fiberG: number | null } | null = null
 ): FocusEntry[] {
-  const protein = valueOrNull(form.proteinG);
-  const fiber = valueOrNull(form.fiberG);
+  // Har dagen en måltidsplan kommer protein och fiber från ätna måltider, annars från formuläret.
+  const protein = nutrition ? nutrition.proteinG : valueOrNull(form.proteinG);
+  const fiber = nutrition ? nutrition.fiberG : valueOrNull(form.fiberG);
   const walk = valueOrNull(form.walkMinutes);
 
   const items: FocusEntry[] = [
     {
       key: "protein",
       label: `Protein ${settings.proteinTargetG} g`,
-      detail: protein !== null ? `${protein} g` : undefined,
+      detail: protein !== null ? `${Math.round(protein)} g` : undefined,
       done: atLeast(protein, settings.proteinTargetG),
     },
     {
       key: "fiber",
       label: `Fiber ${settings.fiberTargetG}+ g`,
-      detail: fiber !== null ? `${fiber} g` : undefined,
+      detail: fiber !== null ? `${Math.round(fiber)} g` : undefined,
       done: atLeast(fiber, settings.fiberTargetG),
     },
     {

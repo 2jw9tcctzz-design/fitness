@@ -1,3 +1,5 @@
+import { SEED_RECIPES } from "../config/seedRecipes";
+
 /**
  * Versionerade migrationer för IndexedDB. Schemaversionen är databasens version.
  * Lägg till nya migrationer sist i listan; ändra aldrig en migration som redan släppts.
@@ -10,6 +12,11 @@ export type Migration = {
 export const DAILY_LOGS_STORE = "daily_logs";
 export const MOVED_TO_INDEX = "by_strength_moved_to";
 export const SETTINGS_STORE = "settings";
+export const RECIPES_STORE = "recipes";
+export const RECIPES_BY_MEAL_TYPE_INDEX = "by_meal_type";
+export const PLANNED_MEALS_STORE = "planned_meals";
+export const PLANNED_BY_DATE_INDEX = "by_date";
+export const PLANNED_BY_SLOT_INDEX = "by_slot";
 
 export const migrations: Migration[] = [
   {
@@ -27,6 +34,22 @@ export const migrations: Migration[] = [
     // Dagloggen berörs inte; befintlig data finns kvar vid uppgradering.
     up: (db) => {
       db.createObjectStore(SETTINGS_STORE, { keyPath: "key" });
+    },
+  },
+  {
+    version: 3,
+    // Mat (Sprint 2A): recept och planerade måltider. Dagloggar och inställningar berörs inte.
+    // Nya mål för kolhydrater och fett ligger i inställningsposten och fylls på med standardvärden
+    // när den läses (mergeWithDefaults), så ingen sparad post skrivs om här.
+    up: (db) => {
+      const recipes = db.createObjectStore(RECIPES_STORE, { keyPath: "id" });
+      recipes.createIndex(RECIPES_BY_MEAL_TYPE_INDEX, "mealType", { unique: false });
+      for (const recipe of SEED_RECIPES) recipes.put(recipe);
+
+      const planned = db.createObjectStore(PLANNED_MEALS_STORE, { keyPath: "id" });
+      planned.createIndex(PLANNED_BY_DATE_INDEX, "date", { unique: false });
+      // Högst en planerad måltid per dag och måltidstyp.
+      planned.createIndex(PLANNED_BY_SLOT_INDEX, ["date", "mealType"], { unique: true });
     },
   },
 ];

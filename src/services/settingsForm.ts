@@ -9,6 +9,8 @@ export type SettingsForm = {
   strengthDays: number[];
   calorieTarget: string;
   proteinTargetG: string;
+  carbsTargetG: string;
+  fatTargetG: string;
   fiberTargetG: string;
   walkTargetMin: string;
   sleepTargetHours: string;
@@ -28,6 +30,8 @@ export function settingsToForm(s: AppSettings): SettingsForm {
     strengthDays: [...s.program.strengthDays],
     calorieTarget: numToText(s.program.calorieTarget),
     proteinTargetG: numToText(s.program.proteinTargetG),
+    carbsTargetG: numToText(s.program.carbsTargetG),
+    fatTargetG: numToText(s.program.fatTargetG),
     fiberTargetG: numToText(s.program.fiberTargetG),
     walkTargetMin: numToText(s.program.walkTargetMin),
     sleepTargetHours: numToText(s.program.sleepTargetHours),
@@ -43,7 +47,7 @@ export function settingsToForm(s: AppSettings): SettingsForm {
 }
 
 type TargetSpec = {
-  key: "calorieTarget" | "proteinTargetG" | "fiberTargetG" | "walkTargetMin" | "sleepTargetHours" | "stepTarget" | "mobilityTargetMin";
+  key: "calorieTarget" | "proteinTargetG" | "carbsTargetG" | "fatTargetG" | "fiberTargetG" | "walkTargetMin" | "sleepTargetHours" | "stepTarget" | "mobilityTargetMin";
   label: string;
   decimal: boolean;
   min: number;
@@ -54,6 +58,8 @@ type TargetSpec = {
 const TARGETS: TargetSpec[] = [
   { key: "calorieTarget", label: "Kalorier", decimal: false, min: 800, max: 6000 },
   { key: "proteinTargetG", label: "Protein", decimal: false, min: 20, max: 400 },
+  { key: "carbsTargetG", label: "Kolhydrater", decimal: false, min: 20, max: 800 },
+  { key: "fatTargetG", label: "Fett", decimal: false, min: 10, max: 400 },
   { key: "fiberTargetG", label: "Fiber", decimal: false, min: 5, max: 100 },
   { key: "walkTargetMin", label: "Promenad", decimal: false, min: 5, max: 300 },
   { key: "sleepTargetHours", label: "Sömn", decimal: true, min: 4, max: 12 },
@@ -109,6 +115,8 @@ export function formToSettings(form: SettingsForm, current: AppSettings): Settin
         strengthDays: [...form.strengthDays].sort((a, b) => a - b),
         calorieTarget: targets.calorieTarget,
         proteinTargetG: targets.proteinTargetG,
+        carbsTargetG: targets.carbsTargetG,
+        fatTargetG: targets.fatTargetG,
         fiberTargetG: targets.fiberTargetG,
         walkTargetMin: targets.walkTargetMin,
         sleepTargetHours: targets.sleepTargetHours,

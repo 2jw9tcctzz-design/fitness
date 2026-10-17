@@ -64,3 +64,12 @@ tests/          logic.test.ts, db.test.ts, settings.test.ts, migration.test.ts
 Oförändrat portbart: `src/services`, `src/types`, `src/config`, `src/utils`, `tests/logic.test.ts`.
 Byts: `src/db` (IndexedDB → SQLite bakom samma funktioner) och UI (`components`, `screens`, `hooks`
 rörande React DOM → React Native). Ett färdigt Expo-bygge av Sprint 1 (utan flyttat pass) finns separat.
+
+
+## Sprint 2A: Mat
+
+- **Mat** har *Dagens meny* (Planerat vs Ätit, fyra måltidskort med Öppna recept, Äten och Byt) och *Veckoplan* (välj eller byt recept per dag och måltid).
+- **Idag, Under dagen** läser summan av måltider markerade som ätna. Manuell inmatning av kalorier, protein och fiber är borttagen som huvudflöde; äldre inmatade värden finns kvar och visas på dagar utan måltidsplan.
+- **Inställningar** har nu mål för kolhydrater och fett (standard 180 och 60) och **Backup** (exportera/importera JSON).
+- Databasversion 3: `recipes` (12 testrecept följer med) och `planned_meals`. Dagloggar och inställningar rörs inte.
+- 57 automatiska tester (`npm test`).

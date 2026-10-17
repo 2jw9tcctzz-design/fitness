@@ -4,6 +4,8 @@ export type ProgramSettings = {
   durationWeeks: number;
   calorieTarget: number;
   proteinTargetG: number;
+  carbsTargetG: number;
+  fatTargetG: number;
   fiberTargetG: number;
   walkTargetMin: number;
   sleepTargetHours: number;

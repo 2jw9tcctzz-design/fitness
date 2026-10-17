@@ -2,10 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { TabBar } from "./components/TabBar";
 import { initDatabase, requestPersistentStorage } from "./db/database";
 import { useHashRoute } from "./hooks/useHashRoute";
-import { FoodScreen, ProgressScreen, TrainingScreen } from "./screens/PlaceholderScreen";
+import { FoodScreen } from "./screens/FoodScreen";
+import { ProgressScreen, TrainingScreen } from "./screens/PlaceholderScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { TodayScreen } from "./screens/TodayScreen";
 import { SettingsProvider } from "./settings/SettingsContext";
+import { AppStateProvider } from "./state/AppStateContext";
 
 type DbState = "loading" | "ready" | "error";
 
@@ -47,18 +49,20 @@ export default function App() {
 
   return (
     <SettingsProvider>
+      <AppStateProvider>
       <main className="main">
         {/* Idag hålls monterad (bara dold) så att valt datum och osparad inmatning finns kvar när man
             tittar i Inställningar eller byter flik. */}
         <div hidden={route !== "idag"}>
-          <TodayScreen onOpenSettings={() => setRoute("installningar")} />
+          <TodayScreen onOpenSettings={() => setRoute("installningar")} onOpenFood={() => setRoute("mat")} />
         </div>
         {route === "installningar" ? <SettingsScreen onBack={() => setRoute("idag")} /> : null}
-        {route === "mat" ? <FoodScreen /> : null}
+        {route === "mat" ? <FoodScreen onOpenSettings={() => setRoute("installningar")} /> : null}
         {route === "traning" ? <TrainingScreen /> : null}
         {route === "progress" ? <ProgressScreen /> : null}
       </main>
       <TabBar active={route} onChange={setRoute} />
+      </AppStateProvider>
     </SettingsProvider>
   );
 }

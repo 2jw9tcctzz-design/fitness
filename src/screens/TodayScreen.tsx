@@ -3,6 +3,7 @@ import { AppHeader } from "../components/AppHeader";
 import { EnergySelector } from "../components/EnergySelector";
 import { FocusCard } from "../components/FocusCard";
 import { MeasurementsInput } from "../components/MeasurementsInput";
+import { NutritionRows } from "../components/NutritionRows";
 import { NoteField } from "../components/NoteField";
 import { NumberInputRow } from "../components/NumberInputRow";
 import { SaveButton } from "../components/SaveButton";
@@ -13,9 +14,9 @@ import { useSettings } from "../settings/SettingsContext";
 import { formatDateLong } from "../utils/dates";
 import { formatNumber } from "../utils/format";
 
-type Props = { onOpenSettings: () => void };
+type Props = { onOpenSettings: () => void; onOpenFood: () => void };
 
-export function TodayScreen({ onOpenSettings }: Props) {
+export function TodayScreen({ onOpenSettings, onOpenFood }: Props) {
   const { settings: appSettings } = useSettings();
   const t = useDailyCheckIn(appSettings);
   const { form, updateForm, week, settings, baseline } = t;
@@ -81,29 +82,7 @@ export function TodayScreen({ onOpenSettings }: Props) {
         />
       </SectionCard>
 
-      <SectionCard title="Under dagen" subtitle="Det du ätit. Fylls i här tills Mat är klar (Sprint 2).">
-        <NumberInputRow
-          label="Kalorier"
-          unit="kcal"
-          hint={`Mål ${formatNumber(settings.calorieTarget)} kcal`}
-          value={form.calories}
-          onChange={(v) => updateForm("calories", v)}
-        />
-        <NumberInputRow
-          label="Protein"
-          unit="g"
-          hint={`Mål ${formatNumber(settings.proteinTargetG)} g`}
-          value={form.proteinG}
-          onChange={(v) => updateForm("proteinG", v)}
-        />
-        <NumberInputRow
-          label="Fiber"
-          unit="g"
-          hint={`Mål ${formatNumber(settings.fiberTargetG)}+ g`}
-          value={form.fiberG}
-          onChange={(v) => updateForm("fiberG", v)}
-        />
-      </SectionCard>
+      <NutritionRows nutrition={t.dayNutrition} targets={settings} onOpenFood={onOpenFood} />
 
       <SectionCard title="Genomförd träning" subtitle="Fylls i här tills Träning är klar (Sprint 3).">
         <ActivityInput
