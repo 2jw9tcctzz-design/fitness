@@ -74,6 +74,18 @@ export async function upsertDailyLog(log: DailyLogInput): Promise<DailyLog> {
   return row;
 }
 
+/**
+ * Uppdaterar bara de angivna fälten i dagens logg och lämnar övriga orörda. Används när flera
+ * skärmar äger olika delar av samma dag (Idag äger t.ex. vikt och steg, Träning äger mobility).
+ */
+export async function patchDailyLog(date: string, patch: Partial<DailyLogInput>): Promise<DailyLog> {
+  const existing = await getDailyLog(date);
+  const base: DailyLogInput = existing ?? { date };
+  const { date: _ignored, ...fields } = patch;
+  void _ignored;
+  return upsertDailyLog({ ...base, ...fields, date });
+}
+
 /** Inklusive båda datumen, sorterat stigande. */
 export async function getDailyLogsBetween(startDate: string, endDate: string): Promise<DailyLog[]> {
   const db = await getDatabase();

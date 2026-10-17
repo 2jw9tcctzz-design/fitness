@@ -49,6 +49,7 @@ export function BackupSection() {
           <ul>
             <li>{b.pending.data.dailyLogs.length} dagar</li>
             <li>{b.pending.data.plannedMeals.length} planerade måltider</li>
+            <li>{b.pending.data.workoutSessions.length} träningspass</li>
             <li>{b.pending.data.recipes.length} recept</li>
           </ul>
           <p>Det går inte att ångra.</p>

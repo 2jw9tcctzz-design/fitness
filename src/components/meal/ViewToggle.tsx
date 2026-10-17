@@ -1,10 +1,21 @@
 export type MatView = "day" | "week";
 
-export function ViewToggle({ value, onChange }: { value: MatView; onChange: (v: MatView) => void }) {
-  const options: { id: MatView; label: string }[] = [
-    { id: "day", label: "Dagens meny" },
-    { id: "week", label: "Veckoplan" },
-  ];
+export type ToggleOption = { id: MatView; label: string };
+
+const MEAL_OPTIONS: ToggleOption[] = [
+  { id: "day", label: "Dagens meny" },
+  { id: "week", label: "Veckoplan" },
+];
+
+export function ViewToggle({
+  value,
+  onChange,
+  options = MEAL_OPTIONS,
+}: {
+  value: MatView;
+  onChange: (v: MatView) => void;
+  options?: ToggleOption[];
+}) {
   return (
     <div className="view-toggle" role="radiogroup" aria-label="Visa">
       {options.map((o) => (

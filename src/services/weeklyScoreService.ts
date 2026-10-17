@@ -1,6 +1,8 @@
 import { getDailyLogsBetween } from "../db/repositories/dailyLogRepository";
 import { getPlannedMealsBetween } from "../db/repositories/plannedMealRepository";
 import { getAllRecipes } from "../db/repositories/recipeRepository";
+import { getSessionsTouching } from "../db/repositories/workoutRepository";
+import { overlayWorkoutStatus } from "./trainingStatusService";
 import { overlayMealNutrition } from "./nutritionService";
 import { getProgramSettings } from "../config/programDefaults";
 import type { ProgramSettings } from "../types/program";
@@ -25,13 +27,14 @@ export async function getWeekSummary(
   settings: ProgramSettings = getProgramSettings()
 ): Promise<WeekSummary> {
   const { start, end } = getWeekDateRange(date);
-  const [rawLogs, meals, recipes] = await Promise.all([
+  const [rawLogs, meals, recipes, sessions] = await Promise.all([
     getDailyLogsBetween(start, end),
     getPlannedMealsBetween(start, end),
     getAllRecipes(),
+    getSessionsTouching(start, end),
   ]);
-  // Dagar med måltidsplan räknas utifrån ätna måltider i stället för gammal manuell inmatning.
-  const logs = overlayMealNutrition(rawLogs, start, end, meals, recipes);
+  // Dagar med måltidsplan räknas utifrån ätna måltider, och styrka utifrån träningspassen (WorkoutSession).
+  const logs = overlayWorkoutStatus(overlayMealNutrition(rawLogs, start, end, meals, recipes), start, end, sessions);
   return {
     weekStart: start,
     weekEnd: end,

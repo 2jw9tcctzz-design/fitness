@@ -160,10 +160,10 @@ test("dagens fokus: protein och fiber följer ätna måltider när dagen har en 
 
 // ---------- Databas: migration, receptlager, måltidsplan ----------
 
-test("databasen har version 3 med recept och planerade måltider, seedade med 12+ recept", async () => {
+test("databasen har recept och planerade måltider, seedade med 12+ recept", async () => {
   const db = await getDatabase();
-  assert.equal(LATEST_SCHEMA_VERSION, 3);
-  assert.equal(db.version, 3);
+  assert.ok(LATEST_SCHEMA_VERSION >= 3);
+  assert.equal(db.version, LATEST_SCHEMA_VERSION);
   assert.ok(db.objectStoreNames.contains("recipes") && db.objectStoreNames.contains("planned_meals"));
   assert.ok((await getAllRecipes()).length >= 12);
 });

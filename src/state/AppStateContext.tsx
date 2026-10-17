@@ -8,6 +8,9 @@ type AppState = {
   /** Ökar varje gång måltidsdata ändras, så att Idag (som hålls monterad) läser om. */
   mealRevision: number;
   notifyMealsChanged: () => void;
+  /** Ökar när träningspass eller mobility ändras, så att Idag läser om. */
+  trainingRevision: number;
+  notifyTrainingChanged: () => void;
 };
 
 const Ctx = createContext<AppState | null>(null);
@@ -16,7 +19,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [date, setDate] = useState<string>(() => todayString());
   const [mealRevision, setRevision] = useState(0);
   const notifyMealsChanged = useCallback(() => setRevision((r) => r + 1), []);
-  const value = useMemo(() => ({ date, setDate, mealRevision, notifyMealsChanged }), [date, mealRevision, notifyMealsChanged]);
+  const [trainingRevision, setTrainingRevision] = useState(0);
+  const notifyTrainingChanged = useCallback(() => setTrainingRevision((r) => r + 1), []);
+  const value = useMemo(
+    () => ({ date, setDate, mealRevision, notifyMealsChanged, trainingRevision, notifyTrainingChanged }),
+    [date, mealRevision, notifyMealsChanged, trainingRevision, notifyTrainingChanged]
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

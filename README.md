@@ -73,3 +73,10 @@ rörande React DOM → React Native). Ett färdigt Expo-bygge av Sprint 1 (utan 
 - **Inställningar** har nu mål för kolhydrater och fett (standard 180 och 60) och **Backup** (exportera/importera JSON).
 - Databasversion 3: `recipes` (12 testrecept följer med) och `planned_meals`. Dagloggar och inställningar rörs inte.
 - 57 automatiska tester (`npm test`).
+
+## Sprint 3: Träning
+- 12-veckorsprogram (pass A/B/C, block 1A/1B/2/3/deload) definierat i `src/config/trainingProgram.ts` (`PROGRAM_VERSION = 1`).
+- Träning-fliken: dagens pass, veckans plan, loggning av vikt/reps/sekunder, "Förra gången" och "Använd förra gången", progressionstips (ingen automatisk viktändring), byte av övning, egna övningar, mobility, annan träning.
+- Pass flyttas framåt med `plannedDate` bevarad och `performedDate` satt vid genomförande.
+- Idag visar genomförd träning skrivskyddat. Backup-format 2 inkluderar träningsdata. DB-schema v4.
+- Test: 82 enhetstester (`npm test`) samt mobil-e2e med Playwright.

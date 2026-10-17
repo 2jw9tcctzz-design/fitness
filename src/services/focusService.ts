@@ -21,6 +21,14 @@ function atLeast(value: number | null, target: number): boolean {
   return value !== null && value >= target;
 }
 
+/** Träningsläget från Träning (WorkoutSession). Saknas det används dagens formulär (äldre data). */
+export type FocusTraining = {
+  strengthStatus: "none" | "started" | "completed" | "skipped" | "moved";
+  movedTo: string | null;
+  movedInFrom: string | null;
+  mobilityMinutes: number | null;
+};
+
 function strengthDetail(form: CheckInForm, movedInFrom: string | null): string | undefined {
   if (form.strengthStatus === "moved" && form.strengthMovedTo) {
     return `Flyttat till ${formatDateShort(form.strengthMovedTo)}`;
@@ -40,7 +48,8 @@ export function buildFocusItems(
   form: CheckInForm,
   settings: ProgramSettings,
   movedInFrom: string | null = null,
-  nutrition: { proteinG: number | null; fiberG: number | null } | null = null
+  nutrition: { proteinG: number | null; fiberG: number | null } | null = null,
+  training: FocusTraining | null = null
 ): FocusEntry[] {
   // Har dagen en måltidsplan kommer protein och fiber från ätna måltider, annars från formuläret.
   const protein = nutrition ? nutrition.proteinG : valueOrNull(form.proteinG);
@@ -69,14 +78,31 @@ export function buildFocusItems(
   ];
 
   if (getActivityType(date, settings, movedInFrom !== null) === "strength") {
-    items.push({
-      key: "strength",
-      label: "Styrkepass",
-      detail: strengthDetail(form, movedInFrom),
-      done: form.strengthStatus === "done",
-    });
+    if (training) {
+      const t = training;
+      const detail =
+        t.strengthStatus === "completed"
+          ? "Genomfört"
+          : t.strengthStatus === "moved" && t.movedTo
+            ? `Flyttat till ${formatDateShort(t.movedTo)}`
+            : t.strengthStatus === "skipped"
+              ? "Inte gjort"
+              : t.strengthStatus === "started"
+                ? "Pågår"
+                : t.movedInFrom
+                  ? `Flyttat hit från ${formatDateShort(t.movedInFrom)}`
+                  : undefined;
+      items.push({ key: "strength", label: "Styrkepass", detail, done: t.strengthStatus === "completed" });
+    } else {
+      items.push({
+        key: "strength",
+        label: "Styrkepass",
+        detail: strengthDetail(form, movedInFrom),
+        done: form.strengthStatus === "done",
+      });
+    }
   } else {
-    const mobility = valueOrNull(form.mobilityMinutes);
+    const mobility = training ? training.mobilityMinutes : valueOrNull(form.mobilityMinutes);
     items.push({
       key: "mobility",
       label: `${settings.mobilityTargetMin}–${settings.mobilityTargetMin + 5} min mobility`,

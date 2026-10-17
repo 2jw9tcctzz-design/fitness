@@ -69,7 +69,7 @@ test("uppgradering v2 -> v3 behåller dagloggar och inställningar orörda och l
   const { getPlannedMealsBetween } = await import("../src/db/repositories/plannedMealRepository");
 
   const db = await getDatabase();
-  assert.equal(db.version, 3);
+  assert.equal(db.version, 4); // v2 -> v3 -> v4 (senaste)
   assert.ok(db.objectStoreNames.contains("recipes"));
   assert.ok(db.objectStoreNames.contains("planned_meals"));
 

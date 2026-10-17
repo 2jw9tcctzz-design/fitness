@@ -2,6 +2,8 @@ import { mergeWithDefaults } from "../db/repositories/settingsRepository";
 import type { DailyLog } from "../types/dailyLog";
 import { isMealType, type PlannedMeal, type Recipe } from "../types/meal";
 import type { AppSettings } from "../types/program";
+import type { ExerciseLog, ExerciseSet, OtherActivityLog, WorkoutSession } from "../types/training";
+import { PROGRAM_VERSION } from "../config/trainingProgram";
 import { isValidDateString, toDateString } from "../utils/dates";
 
 /** Allt som ingår i en backup. Kroppsmått finns i dagloggarna (dagens mått) och i settings (startvärden). */
@@ -10,11 +12,18 @@ export type BackupData = {
   dailyLogs: DailyLog[];
   recipes: Recipe[];
   plannedMeals: PlannedMeal[];
+  /** Träning (Sprint 3). Saknas i äldre backuper och tolkas då som tomt. */
+  workoutSessions: WorkoutSession[];
+  exerciseLogs: ExerciseLog[];
+  exerciseSets: ExerciseSet[];
+  otherActivities: OtherActivityLog[];
 };
 
 export type BackupFile = {
   app: "daily-coach";
-  formatVersion: 1;
+  formatVersion: 1 | 2;
+  /** Passmallarnas version. Mallarna ligger i appen, inte i backupen. */
+  programVersion?: number;
   /** Databasens schemaversion när backupen togs. */
   schemaVersion: number;
   exportedAt: string;
@@ -22,10 +31,18 @@ export type BackupFile = {
 };
 
 export const BACKUP_APP = "daily-coach";
-export const BACKUP_FORMAT_VERSION = 1;
+export const BACKUP_FORMAT_VERSION = 2;
+const SUPPORTED_FORMAT_VERSIONS = [1, 2];
 
 export function createBackup(data: BackupData, schemaVersion: number, now = new Date()): BackupFile {
-  return { app: BACKUP_APP, formatVersion: BACKUP_FORMAT_VERSION, schemaVersion, exportedAt: now.toISOString(), data };
+  return {
+    app: BACKUP_APP,
+    formatVersion: BACKUP_FORMAT_VERSION,
+    programVersion: PROGRAM_VERSION,
+    schemaVersion,
+    exportedAt: now.toISOString(),
+    data,
+  };
 }
 
 export function backupFileName(now = new Date()): string {
@@ -89,6 +106,45 @@ function validPlanned(v: unknown): v is PlannedMeal {
   );
 }
 
+function validSession(v: unknown): v is WorkoutSession {
+  return (
+    isRec(v) &&
+    isStr(v.id) &&
+    isStr(v.plannedDate) &&
+    isValidDateString(v.plannedDate) &&
+    (v.performedDate == null || (isStr(v.performedDate) && isValidDateString(v.performedDate))) &&
+    (v.movedToDate == null || (isStr(v.movedToDate) && isValidDateString(v.movedToDate))) &&
+    (v.status === "planned" || v.status === "completed" || v.status === "moved" || v.status === "skipped") &&
+    isStrOrNull(v.templateId) &&
+    isStrOrNull(v.startedAt) &&
+    isStrOrNull(v.completedAt) &&
+    isStrOrNull(v.note) &&
+    isStr(v.createdAt) &&
+    isStr(v.updatedAt)
+  );
+}
+
+function validExerciseLog(v: unknown): v is ExerciseLog {
+  return isRec(v) && isStr(v.id) && isStr(v.workoutSessionId) && isStr(v.exerciseName) && isNum(v.order) && isStrOrNull(v.templateExerciseId) && isStrOrNull(v.note);
+}
+
+function validExerciseSet(v: unknown): v is ExerciseSet {
+  return (
+    isRec(v) &&
+    isStr(v.id) &&
+    isStr(v.exerciseLogId) &&
+    isNum(v.setNumber) &&
+    isNumOrNull(v.weightKg) &&
+    isNumOrNull(v.reps) &&
+    isNumOrNull(v.durationSeconds) &&
+    typeof v.completed === "boolean"
+  );
+}
+
+function validOtherActivity(v: unknown): v is OtherActivityLog {
+  return isRec(v) && isStr(v.id) && isStr(v.date) && isValidDateString(v.date) && isStr(v.activityName) && isNumOrNull(v.durationMinutes) && isStrOrNull(v.note);
+}
+
 const PROGRAM_NUMBERS = [
   "durationWeeks", "calorieTarget", "proteinTargetG", "carbsTargetG", "fatTargetG", "fiberTargetG",
   "walkTargetMin", "sleepTargetHours", "stepTarget", "mobilityTargetMin",
@@ -113,16 +169,39 @@ function validSettings(v: unknown): boolean {
 /** Kontrollerar en inläst backup. Allt eller inget: en enda felaktig rad avvisar hela filen. */
 export function validateBackup(raw: unknown): BackupResult {
   if (!isRec(raw) || raw.app !== BACKUP_APP) return fail();
-  if (raw.formatVersion !== BACKUP_FORMAT_VERSION) {
+  if (typeof raw.formatVersion !== "number" || !SUPPORTED_FORMAT_VERSIONS.includes(raw.formatVersion)) {
     return fail("Backupen kommer från en version av appen som inte stöds. Inget har ändrats.");
   }
   const data = raw.data;
   if (!isRec(data)) return fail();
   const { settings, dailyLogs, recipes, plannedMeals } = data;
+  // Träningsdata finns bara i nyare backuper; saknade listor blir tomma.
+  const workoutSessions = data.workoutSessions ?? [];
+  const exerciseLogs = data.exerciseLogs ?? [];
+  const exerciseSets = data.exerciseSets ?? [];
+  const otherActivities = data.otherActivities ?? [];
   if (!validSettings(settings)) return fail();
   if (!Array.isArray(dailyLogs) || !dailyLogs.every(validLog)) return fail();
   if (!Array.isArray(recipes) || !recipes.every(validRecipe)) return fail();
   if (!Array.isArray(plannedMeals) || !plannedMeals.every(validPlanned)) return fail();
+
+  if (!Array.isArray(workoutSessions) || !workoutSessions.every(validSession)) return fail();
+  if (!Array.isArray(exerciseLogs) || !exerciseLogs.every(validExerciseLog)) return fail();
+  if (!Array.isArray(exerciseSets) || !exerciseSets.every(validExerciseSet)) return fail();
+  if (!Array.isArray(otherActivities) || !otherActivities.every(validOtherActivity)) return fail();
+  const sessionIds = new Set(workoutSessions.map((s) => s.id));
+  if (sessionIds.size !== workoutSessions.length) return fail();
+  if (new Set(workoutSessions.map((s) => s.plannedDate)).size !== workoutSessions.length) return fail();
+  if (new Set(exerciseLogs.map((l) => l.id)).size !== exerciseLogs.length) return fail();
+  if (!exerciseLogs.every((l) => sessionIds.has(l.workoutSessionId))) {
+    return fail("Backupen innehåller övningar utan pass. Inget har ändrats.");
+  }
+  const logIds = new Set(exerciseLogs.map((l) => l.id));
+  if (new Set(exerciseSets.map((x) => x.id)).size !== exerciseSets.length) return fail();
+  if (!exerciseSets.every((x) => logIds.has(x.exerciseLogId))) {
+    return fail("Backupen innehåller set utan övning. Inget har ändrats.");
+  }
+  if (new Set(otherActivities.map((a) => a.id)).size !== otherActivities.length) return fail();
 
   const dates = new Set(dailyLogs.map((l) => l.date));
   if (dates.size !== dailyLogs.length) return fail();
@@ -141,6 +220,7 @@ export function validateBackup(raw: unknown): BackupResult {
     backup: {
       app: BACKUP_APP,
       formatVersion: BACKUP_FORMAT_VERSION,
+      programVersion: isNum(raw.programVersion) ? raw.programVersion : undefined,
       schemaVersion: isNum(raw.schemaVersion) ? raw.schemaVersion : 0,
       exportedAt: isStr(raw.exportedAt) ? raw.exportedAt : "",
       data: {
@@ -148,6 +228,10 @@ export function validateBackup(raw: unknown): BackupResult {
         dailyLogs: dailyLogs as DailyLog[],
         recipes: recipes as Recipe[],
         plannedMeals: plannedMeals as PlannedMeal[],
+        workoutSessions: workoutSessions as WorkoutSession[],
+        exerciseLogs: exerciseLogs as ExerciseLog[],
+        exerciseSets: exerciseSets as ExerciseSet[],
+        otherActivities: otherActivities as OtherActivityLog[],
       },
     },
   };

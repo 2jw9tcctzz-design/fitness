@@ -1,4 +1,3 @@
-import { ActivityInput } from "../components/ActivityInput";
 import { AppHeader } from "../components/AppHeader";
 import { EnergySelector } from "../components/EnergySelector";
 import { FocusCard } from "../components/FocusCard";
@@ -8,15 +7,16 @@ import { NoteField } from "../components/NoteField";
 import { NumberInputRow } from "../components/NumberInputRow";
 import { SaveButton } from "../components/SaveButton";
 import { SectionCard } from "../components/SectionCard";
+import { TrainingStatusCard } from "../components/TrainingStatusCard";
 import { SummaryCard } from "../components/SummaryCard";
 import { useDailyCheckIn } from "../hooks/useDailyCheckIn";
 import { useSettings } from "../settings/SettingsContext";
 import { formatDateLong } from "../utils/dates";
 import { formatNumber } from "../utils/format";
 
-type Props = { onOpenSettings: () => void; onOpenFood: () => void };
+type Props = { onOpenSettings: () => void; onOpenFood: () => void; onOpenTraining: () => void };
 
-export function TodayScreen({ onOpenSettings, onOpenFood }: Props) {
+export function TodayScreen({ onOpenSettings, onOpenFood, onOpenTraining }: Props) {
   const { settings: appSettings } = useSettings();
   const t = useDailyCheckIn(appSettings);
   const { form, updateForm, week, settings, baseline } = t;
@@ -84,18 +84,7 @@ export function TodayScreen({ onOpenSettings, onOpenFood }: Props) {
 
       <NutritionRows nutrition={t.dayNutrition} targets={settings} onOpenFood={onOpenFood} />
 
-      <SectionCard title="Genomförd träning" subtitle="Fylls i här tills Träning är klar (Sprint 3).">
-        <ActivityInput
-          activityType={t.activityType}
-          strengthStatus={form.strengthStatus}
-          strengthMovedTo={form.strengthMovedTo}
-          moveCandidates={t.moveCandidates}
-          movedInFrom={t.movedInFrom}
-          onStrengthStatusChange={t.setStrengthStatus}
-          onStrengthMovedToChange={t.setStrengthMovedTo}
-          mobilityMinutes={form.mobilityMinutes}
-          onMobilityChange={(v) => updateForm("mobilityMinutes", v)}
-        />
+      <TrainingStatusCard training={t.dayTraining} settings={settings} onOpenTraining={onOpenTraining}>
         <NumberInputRow
           label="Powerwalk"
           unit="min"
@@ -103,7 +92,7 @@ export function TodayScreen({ onOpenSettings, onOpenFood }: Props) {
           value={form.walkMinutes}
           onChange={(v) => updateForm("walkMinutes", v)}
         />
-      </SectionCard>
+      </TrainingStatusCard>
 
       <SectionCard title="Kvällens check-out">
         <NumberInputRow

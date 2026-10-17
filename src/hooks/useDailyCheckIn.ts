@@ -1,26 +1,39 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  getDailyLog,
-  getLogMovedTo,
-  getMoveTargetsTaken,
-  upsertDailyLog,
-} from "../db/repositories/dailyLogRepository";
+import { getDailyLog, patchDailyLog } from "../db/repositories/dailyLogRepository";
 import { EMPTY_FORM, formToInput, logToForm, type CheckInForm } from "../services/checkInForm";
 import { buildFocusItems } from "../services/focusService";
 import { getHeaderText } from "../services/headerText";
-import { getActivityType } from "../services/programService";
-import { getMoveTargetCandidates } from "../services/strengthPlanService";
 import { getWeekSummary, type WeekSummary } from "../services/weeklyScoreService";
-import type { StrengthStatus } from "../types/dailyLog";
+import type { DailyLogInput } from "../types/dailyLog";
 import type { AppSettings } from "../types/program";
 import { useAppState } from "../state/AppStateContext";
 import { useDayNutrition } from "./useDayNutrition";
+import { useDayTraining } from "./useDayTraining";
 import { addDays, todayString } from "../utils/dates";
+
+/**
+ * Fälten Idag äger. Träning äger mobility och styrka, Mat äger det som ätits; äldre inmatade
+ * kalorier/protein/fiber bevaras. Sparar Idag bara sina egna fält skriver den aldrig över andras.
+ */
+function pickOwnedFields(i: DailyLogInput): Partial<DailyLogInput> {
+  return {
+    weightKg: i.weightKg,
+    sleepHours: i.sleepHours,
+    walkMinutes: i.walkMinutes,
+    steps: i.steps,
+    energy: i.energy,
+    note: i.note,
+    waistCm: i.waistCm,
+    hipsCm: i.hipsCm,
+    chestCm: i.chestCm,
+    thighCm: i.thighCm,
+    armCm: i.armCm,
+  };
+}
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
 const SAVED_FEEDBACK_MS = 2500;
-const MOVE_WINDOW_DAYS = 7;
 
 function logError(context: string, error: unknown) {
   if (import.meta.env.DEV) console.warn(`[DailyCheckIn] ${context}`, error);
@@ -34,34 +47,24 @@ export function useDailyCheckIn(appSettings: AppSettings) {
   const settings = appSettings.program;
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
-  const { date, setDate, mealRevision } = useAppState();
+  const { date, setDate, mealRevision, trainingRevision } = useAppState();
   const dayNutrition = useDayNutrition(date);
+  const dayTraining = useDayTraining(date, settings);
   const [form, setForm] = useState<CheckInForm>(EMPTY_FORM);
   const [week, setWeek] = useState<WeekSummary | null>(null);
-  const [movedInFrom, setMovedInFrom] = useState<string | null>(null);
-  const [takenTargets, setTakenTargets] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Hämtar det som hänger ihop med dagen men inte är själva loggen. Fel här blockerar inte inmatning. */
+  /** Hämtar veckosammanfattningen. Fel här blockerar inte inmatning. */
   const refreshAux = useCallback(async (forDate: string) => {
     try {
-      const [summary, incoming, taken] = await Promise.all([
-        getWeekSummary(forDate, settingsRef.current),
-        getLogMovedTo(forDate),
-        getMoveTargetsTaken(addDays(forDate, 1), addDays(forDate, MOVE_WINDOW_DAYS)),
-      ]);
-      setWeek(summary);
-      setMovedInFrom(incoming?.date ?? null);
-      setTakenTargets(taken);
+      setWeek(await getWeekSummary(forDate, settingsRef.current));
     } catch (error) {
-      logError("kunde inte läsa veckan/flyttade pass", error);
+      logError("kunde inte läsa veckan", error);
       setWeek(null);
-      setMovedInFrom(null);
-      setTakenTargets(new Set());
     }
   }, []);
 
@@ -85,7 +88,7 @@ export function useDailyCheckIn(appSettings: AppSettings) {
     }
     void refreshAux(date);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mealRevision]);
+  }, [mealRevision, trainingRevision]);
 
   // Ladda loggen för valt datum. `cancelled` hindrar att ett långsamt svar skriver över en nyare dag.
   useEffect(() => {
@@ -130,21 +133,6 @@ export function useDailyCheckIn(appSettings: AppSettings) {
     resetFeedback();
   }, []);
 
-  /** Sätter styrkepassets status. Att välja samma status igen rensar den (inte registrerat). */
-  const setStrengthStatus = useCallback((status: StrengthStatus | null) => {
-    setForm((prev) => ({
-      ...prev,
-      strengthStatus: status,
-      strengthMovedTo: status === "moved" ? prev.strengthMovedTo : null,
-    }));
-    resetFeedback();
-  }, []);
-
-  const setStrengthMovedTo = useCallback((target: string | null) => {
-    setForm((prev) => ({ ...prev, strengthStatus: "moved", strengthMovedTo: target }));
-    resetFeedback();
-  }, []);
-
   const save = useCallback(async () => {
     if (savedTimer.current) clearTimeout(savedTimer.current);
     const result = formToInput(date, form);
@@ -157,7 +145,7 @@ export function useDailyCheckIn(appSettings: AppSettings) {
     setSaveState("saving");
     setSaveError(null);
     try {
-      await upsertDailyLog(result.input);
+      await patchDailyLog(date, pickOwnedFields(result.input));
       setSaveState("saved");
       savedTimer.current = setTimeout(() => setSaveState("idle"), SAVED_FEEDBACK_MS);
       await refreshAux(date);
@@ -169,30 +157,25 @@ export function useDailyCheckIn(appSettings: AppSettings) {
   }, [date, form, refreshAux]);
 
   const header = useMemo(() => getHeaderText(date, settings), [date, settings]);
-  const activityType = useMemo(
-    () => getActivityType(date, settings, movedInFrom !== null),
-    [date, settings, movedInFrom]
-  );
   const focusItems = useMemo(
     () =>
       buildFocusItems(
         date,
         form,
         settings,
-        movedInFrom,
-        dayNutrition.source === "meals" ? dayNutrition.values : null
+        dayTraining?.receivedFrom ?? null,
+        dayNutrition.source === "meals" ? dayNutrition.values : null,
+        dayTraining
+          ? {
+              strengthStatus: dayTraining.status,
+              movedTo: dayTraining.movedTo,
+              movedInFrom: dayTraining.receivedFrom,
+              mobilityMinutes: dayTraining.mobilityMinutes,
+            }
+          : null
       ),
-    [date, form, settings, movedInFrom, dayNutrition]
+    [date, form, settings, dayNutrition, dayTraining]
   );
-  const moveCandidates = useMemo(() => {
-    const list = getMoveTargetCandidates(date, settings, takenTargets, MOVE_WINDOW_DAYS);
-    // Ett redan valt måldatum ska alltid synas, även om det räknas som "taget" av just detta pass.
-    if (form.strengthMovedTo && !list.includes(form.strengthMovedTo)) {
-      list.push(form.strengthMovedTo);
-      list.sort();
-    }
-    return list;
-  }, [date, settings, takenTargets, form.strengthMovedTo]);
 
   return {
     settings,
@@ -202,14 +185,10 @@ export function useDailyCheckIn(appSettings: AppSettings) {
     dayNutrition,
     isToday: date === todayString(),
     header,
-    activityType,
+    dayTraining,
     focusItems,
     form,
     updateForm,
-    setStrengthStatus,
-    setStrengthMovedTo,
-    moveCandidates,
-    movedInFrom,
     week,
     loading,
     loadError,
