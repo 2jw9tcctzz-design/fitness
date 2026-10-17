@@ -20,24 +20,28 @@ React + TypeScript + Vite. Lagring lokalt på telefonen (IndexedDB). Ingen backe
 ```bash
 npm install
 npm run dev        # utveckling
-npm test           # 26 tester (logik + IndexedDB)
+npm test           # 33 tester (logik, inställningar, IndexedDB, uppgradering v1→v2)
 npm run build      # produktionsbygge i dist/
 ```
 
-## Ändra programstart
+## Inställningar
 
-Ett enda ställe: `PROGRAM_START_DATE` i `src/config/programDefaults.ts` (nu `2026-10-12`, platshållare).
+Kugghjulet uppe till höger i Idag öppnar Inställningar: dagliga mål (kalorier, protein, fiber, promenad,
+sömn, steg, mobility), startvikt, startmått, programstart och styrkedagar. Allt sparas på telefonen och
+slår igenom direkt i Idag. Standardvärden finns i `src/config/programDefaults.ts`.
 
 ## Test på riktig iPhone (acceptans, ca 10 min)
 
 1. Hemskärmsappen öppnas utan webbläsarfält och visar fyra flikar.
-2. Idag visar rätt dag/vecka. Fyll i bara *Protein* och tryck **Spara dagen** → "Sparat".
+2. Idag visar rätt dag/vecka och fyra delar: Morgonens check-in, Under dagen, Genomförd träning, Kvällens
+   check-out. Fyll i bara *Protein* och tryck **Spara dagen** → "Sparat".
 3. Stäng appen helt (svep bort) och öppna igen → protein finns kvar.
 4. Gå till en måndag, välj **Flytta** → välj en dag → spara. Gå till den dagen: den visar styrkepass
    ("Flyttat hit från …"). Markera **Gjort** → spara → *Träning* visar 1/3.
 5. Tryck på datumet i toppen: iOS kalender öppnas. Välj ett tidigare datum, ändra och spara.
-6. Fliken Mat/Träning/Progress visar "Kommer i Sprint 2/3/4".
-7. Flygplansläge: appen startar och fungerar.
+6. Kugghjulet: ändra kalorimålet, spara, gå tillbaka. Idag visar nya målet som hjälptext.
+7. Fliken Mat/Träning/Progress visar "Kommer i Sprint 2/3/4".
+8. Flygplansläge: appen startar och fungerar.
 
 ## Struktur
 
@@ -45,13 +49,14 @@ Ett enda ställe: `PROGRAM_START_DATE` i `src/config/programDefaults.ts` (nu `20
 src/
   components/   AppHeader, SummaryCard, FocusCard, FocusItem, NumberInputRow, EnergySelector,
                 ActivityInput, StrengthInput, NoteField, SaveButton, EmptyState, SectionCard, TabBar
-  screens/      TodayScreen, PlaceholderScreen (Mat, Träning, Progress)
-  hooks/        useDailyCheckIn (all logik för Idag), useHashRoute
+  screens/      TodayScreen, SettingsScreen, PlaceholderScreen (Mat, Träning, Progress)
+  settings/     SettingsContext (läser och sparar inställningar)
+  hooks/        useDailyCheckIn (all logik för Idag), useSettingsForm, useHashRoute
   db/           database.ts, migrations.ts, repositories/dailyLogRepository.ts
   services/     programService, weeklyScoreCalc, weeklyScoreService, checkInForm,
-                focusService, strengthPlanService, headerText
+                focusService, strengthPlanService, headerText, settingsForm
   config/ types/ utils/
-tests/          logic.test.ts, db.test.ts
+tests/          logic.test.ts, db.test.ts, settings.test.ts, migration.test.ts
 ```
 
 ## Flytt till Expo senare
